@@ -5,275 +5,194 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Live Translator</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Inter font for professional look -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     body {
       box-sizing: border-box;
       font-family: 'Inter', sans-serif;
+      /* Prevent scrolling on the body, handle it in the container */
+      overflow: hidden; 
     }
     
+    /* Animations */
     @keyframes pulse-ring {
       0% { transform: scale(0.8); opacity: 0.5; }
       100% { transform: scale(2); opacity: 0; }
     }
-    
-    .listening-ring {
-      position: relative;
-    }
+    .listening-ring { position: relative; }
     .listening-ring::before {
-      content: '';
-      position: absolute;
-      left: 0; top: 0;
-      width: 100%; height: 100%;
-      background-color: #ef4444; /* red-500 */
-      border-radius: 50%;
-      z-index: -1;
+      content: ''; position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+      background-color: #ef4444; border-radius: 50%; z-index: -1;
       animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
     }
     
-    .caption-enter {
-      animation: fadeIn 0.3s ease-out;
-    }
+    .caption-enter { animation: fadeIn 0.3s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(5px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    
-    @keyframes sound-wave {
-      0% { height: 4px; }
-      50% { height: 12px; }
-      100% { height: 4px; }
-    }
-    
-    .playing-indicator .bar {
-      width: 3px;
-      background-color: #fff;
-      border-radius: 9999px;
-      animation: sound-wave 0.8s ease-in-out infinite;
-    }
+    @keyframes sound-wave { 0% { height: 4px; } 50% { height: 12px; } 100% { height: 4px; } }
+    .playing-indicator .bar { width: 3px; background-color: #fff; border-radius: 9999px; animation: sound-wave 0.8s ease-in-out infinite; }
     .playing-indicator .bar:nth-child(1) { animation-delay: 0.0s; }
     .playing-indicator .bar:nth-child(2) { animation-delay: 0.1s; }
     .playing-indicator .bar:nth-child(3) { animation-delay: 0.2s; }
 
-    /* Custom Toggle Switch Logic */
-    .toggle-checkbox {
-        appearance: none;
-        background-color: #fff;
-        margin: 0;
-        font: inherit;
-        width: 1.25rem; /* w-5 */
-        height: 1.25rem; /* h-5 */
-        border: 2px solid #94a3b8; /* slate-400 */
-        border-radius: 50%;
-        transform: translateY(-0px);
-        transition: 0.2s ease-in-out;
-        position: absolute;
-        left: 0;
-        top: 0;
-        cursor: pointer;
-    }
+    /* Custom Toggles */
+    .mode-btn.active { background-color: #4f46e5; color: white; border-color: #4f46e5; }
+    .mode-btn { background-color: #1e293b; color: #94a3b8; border: 1px solid #334155; }
 
-    .toggle-checkbox:checked {
-        transform: translateX(100%); /* Move width of itself (w-5 is 1.25rem, container is w-10 2.5rem) */
-        border-color: #6366f1; /* indigo-500 */
-    }
-    
-    .toggle-label {
-        background-color: #94a3b8; /* slate-400 */
-        width: 100%;
-        height: 100%;
-        border-radius: 9999px;
-        transition: background-color 0.2s ease-in-out;
-    }
-    
-    .toggle-checkbox:checked + .toggle-label {
-        background-color: #6366f1; /* indigo-500 */
-    }
-    
-    /* Dark scrollbar */
+    /* Scrollbar */
     ::-webkit-scrollbar { width: 8px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; } /* slate-600 */
-    ::-webkit-scrollbar-thumb:hover { background: #64748b; } /* slate-500 */
+    ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #64748b; }
   </style>
  </head>
- <body class="h-full bg-slate-900 text-slate-100">
-  <div id="app-wrapper" class="w-full h-full flex flex-col">
-   
-   <!-- Professional Dark Header -->
-   <header class="bg-slate-900/90 backdrop-blur-sm border-b border-slate-700 shadow-sm z-10 sticky top-0">
-     <div class="max-w-7xl mx-auto px-6 py-4 flex flex-col xl:flex-row items-center justify-between gap-4">
-       
-       <!-- Logo Area -->
-       <div class="flex items-center gap-3 w-full xl:w-auto justify-between xl:justify-start">
-         <div class="flex items-center gap-3">
-             <div class="bg-indigo-600 text-white p-2 rounded-lg shadow-sm">
-               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-               </svg>
-             </div>
-             <div>
-                <h1 class="text-lg font-bold text-white tracking-tight leading-tight">Live Translator</h1>
-                <p class="text-xs text-slate-400 font-medium">Enterprise Edition</p>
-             </div>
-         </div>
+ <body class="h-full bg-slate-900 text-slate-100 flex flex-col">
+
+   <!-- 1. Header: Branding -->
+   <header class="bg-slate-900 border-b border-slate-800 py-3 px-6 flex items-center justify-between shrink-0">
+       <div class="flex items-center gap-3">
+           <div class="bg-indigo-600 text-white p-2 rounded-lg shadow-lg shadow-indigo-500/20">
+             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+             </svg>
+           </div>
+           <div>
+              <h1 class="text-lg font-bold text-white tracking-tight">Live Translator</h1>
+              <p class="text-xs text-slate-400 font-medium">Classroom Edition</p>
+           </div>
        </div>
-
-       <!-- Main Controls -->
-       <div class="flex flex-col md:flex-row items-center gap-4 w-full xl:w-auto justify-center">
-          
-          <!-- Audio Mode Toggle -->
-          <div class="flex items-center gap-3 bg-slate-800 py-1.5 px-4 rounded-lg border border-slate-700">
-             <span class="text-sm font-medium text-slate-300 flex items-center gap-2 select-none cursor-pointer" onclick="document.getElementById('audio-toggle').click()">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 18v-6a9 9 0 0118 0v6" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 19a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3zM3 19a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3z" />
-                </svg>
-                Live Audio Mode
-             </span>
-             <div class="relative inline-block w-10 h-5 align-middle select-none">
-                <input type="checkbox" name="toggle" id="audio-toggle" class="toggle-checkbox"/>
-                <label for="audio-toggle" class="toggle-label block"></label>
-            </div>
-          </div>
-
-          <!-- Language Selector (Flat List) -->
-          <div class="relative flex-grow md:flex-grow-0 group w-full md:w-auto">
-              <select id="language-select" class="w-full md:w-56 appearance-none bg-slate-800 border border-slate-600 text-slate-200 text-sm font-medium py-2 px-3 pr-8 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors cursor-pointer shadow-sm">
-                    <option value="af">🇿🇦 Afrikaans</option>
-                    <option value="sq">🇦🇱 Albanian</option>
-                    <option value="ar">🇸🇦 Arabic</option>
-                    <option value="bn">🇧🇩 Bengali</option>
-                    <option value="bg">🇧🇬 Bulgarian</option>
-                    <option value="zh">🇨🇳 Chinese (Simplified)</option>
-                    <option value="hr">🇭🇷 Croatian</option>
-                    <option value="cs">🇨🇿 Czech</option>
-                    <option value="da">🇩🇰 Danish</option>
-                    <option value="nl">🇳🇱 Dutch</option>
-                    <option value="en">🇺🇸 English</option>
-                    <option value="et">🇪🇪 Estonian</option>
-                    <option value="fi">🇫🇮 Finnish</option>
-                    <option value="fr">🇫🇷 French</option>
-                    <option value="de">🇩🇪 German</option>
-                    <option value="el">🇬🇷 Greek</option>
-                    <option value="he">🇮🇱 Hebrew</option>
-                    <option value="hi">🇮🇳 Hindi</option>
-                    <option value="hu">🇭🇺 Hungarian</option>
-                    <option value="id">🇮🇩 Indonesian</option>
-                    <option value="it">🇮🇹 Italian</option>
-                    <option value="ja">🇯🇵 Japanese</option>
-                    <option value="ko">🇰🇷 Korean</option>
-                    <option value="lv">🇱🇻 Latvian</option>
-                    <option value="lt">🇱🇹 Lithuanian</option>
-                    <option value="ms">🇲🇾 Malay</option>
-                    <option value="no">🇳🇴 Norwegian</option>
-                    <option value="pl">🇵🇱 Polish</option>
-                    <option value="pt" selected>🇧🇷 Portuguese</option>
-                    <option value="ro">🇷🇴 Romanian</option>
-                    <option value="ru">🇷🇺 Russian</option>
-                    <option value="sk">🇸🇰 Slovak</option>
-                    <option value="sl">🇸🇮 Slovenian</option>
-                    <option value="es">🇪🇸 Spanish</option>
-                    <option value="sv">🇸🇪 Swedish</option>
-                    <option value="th">🇹🇭 Thai</option>
-                    <option value="tr">🇹🇷 Turkish</option>
-                    <option value="uk">🇺🇦 Ukrainian</option>
-                    <option value="vi">🇻🇳 Vietnamese</option>
-              </select>
-              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
-                  <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-              </div>
-          </div>
-
-          <!-- Action Buttons -->
-          <button id="start-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 px-6 rounded-lg transition-colors flex items-center gap-2 shadow-sm text-sm whitespace-nowrap border border-indigo-500">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
-              Start Listening
-          </button>
-          
-          <button id="stop-btn" class="hidden bg-slate-800 border border-red-900/50 text-red-400 hover:bg-slate-700 font-medium py-2 px-6 rounded-lg transition-colors flex items-center gap-2 shadow-sm text-sm whitespace-nowrap">
-            <span class="relative flex h-2 w-2 mr-1">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
-              <span class="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
-            </span>
-            Stop Session
-          </button>
+       <div id="status-badge" class="hidden px-3 py-1 bg-red-500/10 text-red-400 border border-red-500/20 rounded-full text-xs font-semibold flex items-center gap-2">
+           <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span> Listening
        </div>
-     </div>
    </header>
 
-   <!-- Main Content Area -->
-   <main class="flex-1 overflow-hidden relative">
+   <!-- 2. Configuration Bar (The "Dashboard") -->
+   <div class="bg-slate-800/50 border-b border-slate-700 p-4 shrink-0 transition-all duration-300">
+       <div class="max-w-4xl mx-auto flex flex-col gap-4">
+           
+           <!-- Language Selection Group (Centered) -->
+           <div class="flex flex-col md:flex-row items-center gap-4 w-full justify-center">
+               
+               <!-- Input Section -->
+               <div class="w-full md:w-64">
+                   <div class="relative">
+                       <label class="absolute -top-2.5 left-3 bg-slate-900 px-1 text-[10px] font-bold text-indigo-400 uppercase tracking-wider">I am Speaking</label>
+                       <select id="source-lang" class="w-full bg-slate-900 border border-slate-700 text-white text-sm rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow outline-none cursor-pointer">
+                           <!-- Populated by JS -->
+                       </select>
+                   </div>
+               </div>
+
+               <!-- Direction Arrow -->
+               <div class="flex-shrink-0 text-slate-500 bg-slate-800 p-2 rounded-full border border-slate-700">
+                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+               </div>
+
+               <!-- Output Section -->
+               <div class="w-full md:w-64">
+                   <div class="relative">
+                       <label class="absolute -top-2.5 left-3 bg-slate-900 px-1 text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Translate To</label>
+                       <select id="target-lang" class="w-full bg-slate-900 border border-slate-700 text-white text-sm rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-shadow outline-none cursor-pointer">
+                           <!-- Populated by JS -->
+                       </select>
+                   </div>
+               </div>
+           </div>
+
+           <!-- Mode Selection (Centered) -->
+           <div class="flex justify-center">
+               <div class="flex bg-slate-900 p-1 rounded-xl border border-slate-700 w-full max-w-sm">
+                    <button id="mode-text" class="mode-btn flex-1 py-2 px-4 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-all whitespace-nowrap" onclick="setMode(false)">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        Read
+                    </button>
+                    <button id="mode-audio" class="mode-btn flex-1 py-2 px-4 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-all whitespace-nowrap" onclick="setMode(true)">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 18v-6a9 9 0 0118 0v6h-2v-4a2 2 0 00-2-2H7a2 2 0 00-2 2v4H3zM3 18h2v2H3v-2zm16 0h2v2h-2v-2z" /></svg>
+                        Read & Listen
+                    </button>
+               </div>
+           </div>
+
+           <!-- Header Controls (Visible only when active/stopped) -->
+           <div id="header-controls" class="hidden flex justify-center pt-1">
+                <button id="header-start-btn" class="hidden w-full md:w-auto bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 px-8 rounded-xl shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    Resume Listening
+                </button>
+                <button id="stop-btn" class="w-full md:w-auto bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 px-8 rounded-xl shadow-lg shadow-red-500/20 transition-all flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" /></svg>
+                    Stop Session
+                </button>
+           </div>
+
+       </div>
+   </div>
+
+   <!-- 3. Main Content Area -->
+   <main class="flex-1 overflow-hidden relative bg-slate-900">
      <div class="max-w-4xl mx-auto h-full flex flex-col p-4 md:p-6">
        
-       <!-- Status Bar -->
-       <div id="status-bar" class="mb-4 flex items-center justify-center text-xs font-medium text-slate-400 opacity-0 transition-opacity duration-300">
-          <div class="bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 shadow-sm flex items-center gap-2">
-            <span class="relative flex h-2 w-2">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
-              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            Microphone Active & Listening...
-          </div>
-       </div>
-
        <!-- Captions Container -->
        <div id="captions-container" class="flex-1 overflow-y-auto px-2 pb-24 space-y-6 scroll-smooth">
          
-         <!-- Placeholder State -->
-         <div id="placeholder-text" class="h-full flex flex-col items-center justify-center text-slate-500">
-             <div class="bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-700 mb-4">
-               <!-- Translation Icon -->
-               <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-               </svg>
+         <!-- Placeholder State (Start Button Here) -->
+         <div id="placeholder-text" class="min-h-full py-8 flex flex-col items-center justify-center text-slate-500">
+             <div class="bg-slate-800 p-8 md:p-12 rounded-3xl shadow-2xl border border-slate-700/50 mb-6 text-center max-w-lg w-full">
+               
+               <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-slate-700/50 mb-6 ring-1 ring-slate-600 flex-shrink-0">
+                   <!-- Chat Icon -->
+                   <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                   </svg>
+               </div>
+               
+               <h3 class="text-2xl font-bold text-white mb-8 tracking-tight">Ready to Connect</h3>
+
+               <button id="hero-start-btn" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3.5 px-8 rounded-2xl shadow-xl shadow-emerald-500/20 transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3 text-lg group">
+                    <span>Start Listening</span>
+                    <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+               </button>
              </div>
-             <h3 class="text-lg font-semibold text-slate-300 mb-1">Ready to Translate</h3>
-             <p class="text-center text-sm text-slate-500 max-w-xs">
-               Select language, enable <strong>Audio Mode</strong> if needed, and click <strong>Start Listening</strong>.
-             </p>
          </div>
 
        </div>
      </div>
    </main>
 
-   <!-- Toasts/Alerts -->
+   <!-- 4. Floating Elements -->
    <div id="alerts-container" class="fixed bottom-8 left-1/2 transform -translate-x-1/2 w-full max-w-md px-4 pointer-events-none flex flex-col gap-3 items-center z-50">
      
      <!-- Voice Active Toast -->
-     <div id="voice-toast" class="bg-slate-800 text-white px-4 py-3 rounded-lg shadow-lg hidden pointer-events-auto flex items-center gap-4 transition-all duration-300 translate-y-4 opacity-0 border border-slate-700">
+     <div id="voice-toast" class="bg-indigo-600 text-white px-5 py-3 rounded-2xl shadow-xl shadow-indigo-900/50 hidden pointer-events-auto flex items-center gap-4 transition-all duration-300 translate-y-4 opacity-0">
         <div class="playing-indicator flex gap-1 h-3 items-center">
             <div class="bar h-2"></div>
             <div class="bar h-3"></div>
             <div class="bar h-1"></div>
         </div>
         <div class="flex flex-col">
-            <span class="text-[10px] uppercase tracking-wider font-semibold opacity-60">Speaking</span>
+            <span class="text-[10px] uppercase tracking-wider font-bold opacity-80">Speaking Translation</span>
             <span id="voice-name" class="text-xs font-medium truncate max-w-[150px]">System Voice</span>
         </div>
      </div>
 
      <!-- Error Message -->
-     <div id="error-message" class="bg-slate-800 border border-red-900/50 text-red-400 px-4 py-3 rounded-lg shadow-lg hidden pointer-events-auto flex items-start gap-3 w-full">
-        <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+     <div id="error-message" class="bg-slate-800 border border-red-500/50 text-red-400 px-5 py-4 rounded-2xl shadow-xl hidden pointer-events-auto flex items-start gap-3 w-full">
+        <span class="text-2xl mt-0.5">⚠️</span>
         <div>
-            <p class="font-semibold text-sm">System Error</p>
+            <p class="font-bold text-sm text-white">System Alert</p>
             <span id="error-text" class="text-sm">An unexpected error occurred.</span>
         </div>
      </div>
 
      <!-- Permission Message -->
-     <div id="permission-message" class="bg-slate-800 text-white px-6 py-4 rounded-lg shadow-xl hidden pointer-events-auto w-full border border-slate-700">
+     <div id="permission-message" class="bg-slate-800 text-white px-6 py-5 rounded-3xl shadow-2xl border border-slate-600 hidden pointer-events-auto w-full">
       <div class="flex items-center gap-4">
-       <div class="bg-slate-700 p-2 rounded-lg">
-         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+       <div class="bg-slate-700 p-3 rounded-xl">
+         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
        </div>
        <div>
-        <p class="font-semibold text-sm mb-0.5">Microphone Permissions</p>
-        <p class="text-xs text-slate-400">Please allow access to your microphone to proceed.</p>
+        <p class="font-bold text-lg mb-1">Microphone Access</p>
+        <p class="text-sm text-slate-300">Please click "Allow" to enable speech recognition.</p>
        </div>
       </div>
      </div>
@@ -283,94 +202,113 @@
   </div>
 
   <script>
+    // --- Configuration & Data ---
+    // Full locale codes for Speech Recognition & TTS
+    const languages = [
+        { code: 'en-US', name: '🇺🇸 English (US)' },
+        { code: 'es-ES', name: '🇪🇸 Spanish' },
+        { code: 'pt-BR', name: '🇧🇷 Portuguese' },
+        { code: 'fr-FR', name: '🇫🇷 French' },
+        { code: 'de-DE', name: '🇩🇪 German' },
+        { code: 'it-IT', name: '🇮🇹 Italian' },
+        { code: 'zh-CN', name: '🇨🇳 Chinese (Simplified)' },
+        { code: 'ja-JP', name: '🇯🇵 Japanese' },
+        { code: 'ko-KR', name: '🇰🇷 Korean' },
+        { code: 'ru-RU', name: '🇷🇺 Russian' },
+        { code: 'ar-SA', name: '🇸🇦 Arabic' },
+        { code: 'hi-IN', name: '🇮🇳 Hindi' },
+        { code: 'nl-NL', name: '🇳🇱 Dutch' },
+        { code: 'tr-TR', name: '🇹🇷 Turkish' },
+        { code: 'pl-PL', name: '🇵🇱 Polish' },
+        { code: 'vi-VN', name: '🇻🇳 Vietnamese' },
+        { code: 'uk-UA', name: '🇺🇦 Ukrainian' }
+    ];
+
+    // --- State ---
     let recognition = null;
     let isListening = false;
-    let currentLang = 'pt'; 
+    let isAudioMode = false; // Default to Text Only
     let transcriptCounter = 0;
     let availableVoices = [];
-    let isAudioMode = false;
-    
-    // UI Elements
-    const langSelect = document.getElementById('language-select');
-    const startBtn = document.getElementById('start-btn');
+
+    // --- DOM Elements ---
+    const sourceSelect = document.getElementById('source-lang');
+    const targetSelect = document.getElementById('target-lang');
+    const heroStartBtn = document.getElementById('hero-start-btn');
+    const headerStartBtn = document.getElementById('header-start-btn');
     const stopBtn = document.getElementById('stop-btn');
-    const statusBar = document.getElementById('status-bar');
+    const headerControls = document.getElementById('header-controls');
+    const placeholderText = document.getElementById('placeholder-text');
+    const statusBadge = document.getElementById('status-badge');
+    
+    const modeTextBtn = document.getElementById('mode-text');
+    const modeAudioBtn = document.getElementById('mode-audio');
     const voiceToast = document.getElementById('voice-toast');
     const voiceNameSpan = document.getElementById('voice-name');
     const permissionMessage = document.getElementById('permission-message');
     const errorMessage = document.getElementById('error-message');
-    const audioToggle = document.getElementById('audio-toggle');
-    
-    // --- RESET LOGIC ---
-    function resetUIState() {
-        startBtn.classList.remove('hidden');
-        stopBtn.classList.add('hidden');
-        statusBar.classList.add('opacity-0');
-        permissionMessage.classList.add('hidden');
-        errorMessage.classList.add('hidden');
-        voiceToast.classList.add('hidden');
-        isListening = false;
-        if(audioToggle.checked) isAudioMode = true; // Preserve toggle state if browser kept it
+
+    // --- Initialization ---
+    function init() {
+        populateDropdowns();
+        setMode(false); // Default to Text Only
+        loadVoices();
+        
+        window.addEventListener('resize', () => {
+            document.body.style.height = window.innerHeight + 'px';
+        });
     }
 
-    window.addEventListener('DOMContentLoaded', resetUIState);
+    function populateDropdowns() {
+        languages.forEach(lang => {
+            const sourceOption = new Option(lang.name, lang.code);
+            const targetOption = new Option(lang.name, lang.code);
+            sourceSelect.add(sourceOption);
+            targetSelect.add(targetOption);
+        });
 
-    langSelect.addEventListener('change', (e) => {
-        currentLang = e.target.value;
-    });
+        // Set Defaults: English -> Spanish
+        sourceSelect.value = 'en-US';
+        targetSelect.value = 'es-ES';
+    }
 
-    audioToggle.addEventListener('change', (e) => {
-        isAudioMode = e.target.checked;
-        if (!isAudioMode) {
-             window.speechSynthesis.cancel();
-             hideVoiceToast();
+    function setMode(audioEnabled) {
+        isAudioMode = audioEnabled;
+        if (isAudioMode) {
+            modeAudioBtn.classList.add('active');
+            modeTextBtn.classList.remove('active');
+        } else {
+            modeTextBtn.classList.add('active');
+            modeAudioBtn.classList.remove('active');
+            window.speechSynthesis.cancel();
+            hideVoiceToast();
         }
-    });
+    }
 
-    // Initialize Voices
+    window.setMode = setMode;
+
+    // --- Speech Synthesis (Voices) ---
     function loadVoices() {
         availableVoices = window.speechSynthesis.getVoices();
     }
-    
     if (window.speechSynthesis) {
         window.speechSynthesis.onvoiceschanged = loadVoices;
-        loadVoices();
     }
-    
-    const flags = { 
-        af: '🇿🇦', sq: '🇦🇱', ar: '🇸🇦', bn: '🇧🇩', bg: '🇧🇬', 
-        zh: '🇨🇳', hr: '🇭🇷', cs: '🇨🇿', da: '🇩🇰', nl: '🇳🇱', 
-        en: '🇺🇸', et: '🇪🇪', fi: '🇫🇮', fr: '🇫🇷', de: '🇩🇪', 
-        el: '🇬🇷', he: '🇮🇱', hi: '🇮🇳', hu: '🇭🇺', id: '🇮🇩', 
-        it: '🇮🇹', ja: '🇯🇵', ko: '🇰🇷', lv: '🇱🇻', lt: '🇱🇹', 
-        ms: '🇲🇾', no: '🇳🇴', pl: '🇵🇱', pt: '🇧🇷', ro: '🇷🇴', 
-        ru: '🇷🇺', sk: '🇸🇰', sl: '🇸🇮', es: '🇪🇸', sv: '🇸🇪', 
-        th: '🇹🇭', tr: '🇹🇷', uk: '🇺🇦', vi: '🇻🇳'
-    };
-    
-    const ttsLangMap = {
-        'af': 'af-ZA', 'sq': 'sq-AL', 'ar': 'ar-SA', 'bn': 'bn-BD', 'bg': 'bg-BG',
-        'zh': 'zh-CN', 'hr': 'hr-HR', 'cs': 'cs-CZ', 'da': 'da-DK', 'nl': 'nl-NL',
-        'en': 'en-US', 'et': 'et-EE', 'fi': 'fi-FI', 'fr': 'fr-FR', 'de': 'de-DE',
-        'el': 'el-GR', 'he': 'he-IL', 'hi': 'hi-IN', 'hu': 'hu-HU', 'id': 'id-ID',
-        'it': 'it-IT', 'ja': 'ja-JP', 'ko': 'ko-KR', 'lv': 'lv-LV', 'lt': 'lt-LT',
-        'ms': 'ms-MY', 'no': 'no-NO', 'pl': 'pl-PL', 'pt': 'pt-BR', 'ro': 'ro-RO',
-        'ru': 'ru-RU', 'sk': 'sk-SK', 'sl': 'sl-SI', 'es': 'es-ES', 'sv': 'sv-SE',
-        'th': 'th-TH', 'tr': 'tr-TR', 'uk': 'uk-UA', 'vi': 'vi-VN'
-    };
 
-    function getBestVoice(lang) {
-        const targetLang = ttsLangMap[lang] || lang;
-        const targetBase = targetLang.split('-')[0];
+    function getBestVoice(langCode) {
+        // 1. Filter for language match (exact or base)
+        let candidates = availableVoices.filter(v => v.lang === langCode);
         
-        let candidates = availableVoices.filter(v => v.lang === targetLang);
         if (candidates.length === 0) {
-            candidates = availableVoices.filter(v => v.lang.startsWith(targetBase));
+            const base = langCode.split('-')[0];
+            candidates = availableVoices.filter(v => v.lang.startsWith(base));
         }
-        
+
         if (candidates.length === 0) return null;
 
-        const highQuality = ['Google', 'Premium', 'Enhanced', 'Natural', 'Neural', 'Siri'];
+        // 2. Prioritize "Natural" / High Quality voices
+        // These keywords usually indicate higher quality browser voices
+        const highQuality = ['Google', 'Premium', 'Enhanced', 'Natural', 'Neural', 'Siri', 'Online'];
         
         return candidates.sort((a, b) => {
             const aName = a.name;
@@ -384,233 +322,218 @@
         })[0];
     }
 
-    function speakText(text, lang, shouldQueue = false) {
+    function speakText(text, langCode) {
         if (!window.speechSynthesis) return;
-        
-        if (!shouldQueue) {
-             window.speechSynthesis.cancel(); // Cancel manual clicks immediately
-        }
+        window.speechSynthesis.cancel();
         
         const utterance = new SpeechSynthesisUtterance(text);
-        const bestVoice = getBestVoice(lang);
+        const voice = getBestVoice(langCode);
         
-        if (bestVoice) {
-            utterance.voice = bestVoice;
-            voiceNameSpan.textContent = bestVoice.name.replace(/Microsoft |Google /g, '');
-            showVoiceToast();
+        if (voice) {
+            utterance.voice = voice;
+            utterance.lang = voice.lang;
+            // Clean up voice name for display (remove messy IDs)
+            let displayName = voice.name.replace(/Microsoft |Google |Apple /g, '').split(' - ')[0];
+            voiceNameSpan.textContent = displayName; 
         } else {
-             utterance.lang = ttsLangMap[lang] || lang;
-             voiceNameSpan.textContent = "System Voice";
-             showVoiceToast();
+            utterance.lang = langCode;
+            voiceNameSpan.textContent = "System Voice";
         }
-
-        utterance.rate = 1.0;
-        utterance.onend = () => {
-             if (!window.speechSynthesis.pending) {
-                hideVoiceToast();
-             }
-        };
-        utterance.onerror = hideVoiceToast;
+        
+        utterance.rate = 1.0; // Normal speed is usually most natural for these voices
+        
+        utterance.onstart = () => showVoiceToast();
+        utterance.onend = () => hideVoiceToast();
+        utterance.onerror = () => hideVoiceToast();
 
         window.speechSynthesis.speak(utterance);
     }
-    
+
     function showVoiceToast() {
         voiceToast.classList.remove('hidden');
         void voiceToast.offsetWidth;
         voiceToast.classList.remove('translate-y-4', 'opacity-0');
     }
-    
+
     function hideVoiceToast() {
         voiceToast.classList.add('translate-y-4', 'opacity-0');
-        setTimeout(() => {
-             voiceToast.classList.add('hidden');
-        }, 300);
+        setTimeout(() => voiceToast.classList.add('hidden'), 300);
     }
 
-    async function translateText(text, targetLang) {
-      const apiUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
-      try {
-        const response = await fetch(apiUrl);
-        if (!response.ok) throw new Error('Network response was not ok');
-        const data = await response.json();
-        return data[0].map(item => item[0]).join('');
-      } catch (error) {
-        console.warn("Translation failed:", error);
-        return text; 
-      }
+    // --- Translation Logic ---
+    async function translateText(text, targetLangCode) {
+        const targetSimple = targetLangCode.split('-')[0];
+        const apiUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetSimple}&dt=t&q=${encodeURIComponent(text)}`;
+        try {
+            const response = await fetch(apiUrl);
+            if (!response.ok) throw new Error('Network error');
+            const data = await response.json();
+            return data[0].map(item => item[0]).join('');
+        } catch (error) {
+            console.warn("Translation failed:", error);
+            return text;
+        }
     }
-    
-    function addCaption(originalText, translatedText) {
-      const captionsList = document.getElementById('captions-container');
-      const placeholder = document.getElementById('placeholder-text');
-      if (placeholder) placeholder.remove();
-      
-      const captionId = `caption-${transcriptCounter++}`;
-      const flag = flags[currentLang] || '🌐';
-      
-      const captionDiv = document.createElement('div');
-      captionDiv.className = 'caption-enter group';
-      
-      const isRTL = currentLang === 'ar' || currentLang === 'he';
-      const dirAttr = isRTL ? 'dir="rtl"' : '';
-      const alignClass = isRTL ? 'text-right' : 'text-left';
 
-      // Professional Layout
-      captionDiv.innerHTML = `
-        <div class="flex flex-col gap-2 mb-6">
-            <!-- Source (Dark Neutral) -->
-            <div class="flex items-start gap-3 max-w-[90%] self-start">
-                <div class="w-8 h-8 rounded-lg bg-slate-800 flex flex-shrink-0 items-center justify-center text-xs font-bold text-slate-400 shadow-sm border border-slate-700">EN</div>
-                <div class="bg-slate-800 p-3 rounded-lg border border-slate-700 text-slate-200 text-sm leading-relaxed shadow-sm">
-                    ${originalText}
+    // --- UI Update: Add Bubble ---
+    function addCaption(original, translated, isRTL) {
+        const container = document.getElementById('captions-container');
+        
+        // Hide placeholder but keep it for logic
+        placeholderText.classList.add('hidden');
+
+        const div = document.createElement('div');
+        div.className = 'caption-enter mb-6';
+        
+        const alignClass = isRTL ? 'text-right' : 'text-left';
+        const dirAttr = isRTL ? 'dir="rtl"' : '';
+
+        div.innerHTML = `
+            <div class="flex flex-col gap-2">
+                <!-- Source (Top, Smaller) -->
+                <div class="flex items-start gap-3 max-w-[90%] self-start opacity-70">
+                    <div class="text-xs font-bold text-slate-500 bg-slate-800 px-2 py-1 rounded">Source</div>
+                    <p class="text-slate-300 text-sm leading-relaxed">${original}</p>
+                </div>
+
+                <!-- Translation (Bottom, Prominent) -->
+                <div class="flex items-start gap-3 max-w-[95%] self-end flex-row-reverse mt-1">
+                     <div class="bg-indigo-600 p-4 rounded-2xl rounded-tr-none shadow-lg text-white">
+                        <p class="text-lg font-medium leading-relaxed ${alignClass}" ${dirAttr}>${translated}</p>
+                     </div>
                 </div>
             </div>
+        `;
 
-            <!-- Translation (Reverted to Indigo, but in Dark Context) -->
-            <div class="flex items-start gap-3 max-w-[90%] self-end flex-row-reverse mt-1">
-                 <div class="w-8 h-8 rounded-lg bg-slate-800 flex flex-shrink-0 items-center justify-center text-sm shadow-sm border border-slate-700">${flag}</div>
-                 <div class="bg-indigo-600 p-4 rounded-lg rounded-tr-none shadow-md text-white relative group-hover:shadow-lg transition-shadow border border-indigo-500">
-                    <div class="flex flex-col gap-2">
-                         <p class="text-base font-medium leading-relaxed ${alignClass}" ${dirAttr}>${translatedText}</p>
-                         
-                         <div class="flex items-center justify-between border-t border-indigo-400/30 pt-2 mt-1">
-                             <span class="text-[10px] font-semibold uppercase tracking-wider text-indigo-200">Translated</span>
-                             <button class="speak-btn text-indigo-100 hover:text-white hover:bg-indigo-500 p-1 rounded-md transition-colors" title="Play Sound">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                                </svg>
-                             </button>
-                         </div>
-                    </div>
-                 </div>
-            </div>
-        </div>
-      `;
-      
-      const speakBtn = captionDiv.querySelector('.speak-btn');
-      speakBtn.onclick = () => speakText(translatedText, currentLang, false); // Manual click cancels queue
+        container.appendChild(div);
+        container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
 
-      captionsList.appendChild(captionDiv);
-      
-      captionsList.scrollTo({
-          top: captionsList.scrollHeight,
-          behavior: 'smooth'
-      });
-      
-      // Auto-Speak Logic
-      if (isAudioMode) {
-          speakText(translatedText, currentLang, true); // Queue it up
-      }
-    }
-    
-    function showError(message) {
-      const errorDiv = document.getElementById('error-message');
-      const errorText = document.getElementById('error-text');
-      errorText.textContent = message;
-      errorDiv.classList.remove('hidden');
-      setTimeout(() => errorDiv.classList.add('hidden'), 5000);
-    }
-    
-    function initializeSpeechRecognition() {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      
-      if (!SpeechRecognition) {
-        showError('Please use Chrome browser for the best experience.');
-        startBtn.disabled = true;
-        startBtn.classList.add('opacity-50', 'cursor-not-allowed');
-        return false;
-      }
-      
-      recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = false;
-      recognition.lang = 'en-US';
-      
-      recognition.onstart = () => {
-        isListening = true;
-        startBtn.classList.add('hidden');
-        stopBtn.classList.remove('hidden');
-        statusBar.classList.remove('opacity-0');
-        permissionMessage.classList.add('hidden');
-      };
-
-      recognition.onresult = async (event) => {
-        const result = event.results[event.results.length - 1];
-        if (result.isFinal) {
-          const transcript = result[0].transcript.trim();
-          if (transcript.length > 0) {
-             const translation = await translateText(transcript, currentLang);
-             addCaption(transcript, translation);
-          }
+        if (isAudioMode) {
+            speakText(translated, targetSelect.value);
         }
-      };
-      
-      recognition.onerror = (event) => {
-        if (event.error === 'no-speech') return;
-        console.error("Speech Error", event.error);
-        
-        if (event.error === 'not-allowed') {
-          stopListening();
-          showError('Microphone access needed to listen.');
-        }
-      };
-      
-      recognition.onend = () => {
-        if (isListening) {
-            try { recognition.start(); } catch (e) {}
-        } else {
-            startBtn.classList.remove('hidden');
-            stopBtn.classList.add('hidden');
-            statusBar.classList.add('opacity-0');
-        }
-      };
-      
-      return true;
     }
-    
-    async function requestMicrophonePermission() {
-      // Normal check
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-           return true; // Optimistic fallback
-      }
 
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach(track => track.stop());
+    // --- Speech Recognition ---
+    function initializeRecognition() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            showError("Browser not supported. Please use Google Chrome.");
+            return false;
+        }
+
+        recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = false;
+        recognition.lang = sourceSelect.value; 
+
+        recognition.onstart = () => {
+            isListening = true;
+            toggleUI(true);
+        };
+
+        recognition.onend = () => {
+            if (isListening) {
+                try { recognition.start(); } catch (e) { toggleUI(false); }
+            } else {
+                toggleUI(false);
+            }
+        };
+
+        recognition.onerror = (event) => {
+            if (event.error === 'no-speech') return;
+            if (event.error === 'not-allowed') {
+                showError("Microphone blocked. Check browser permissions.");
+                isListening = false;
+                toggleUI(false);
+            } else {
+                console.log("Error:", event.error);
+            }
+        };
+
+        recognition.onresult = async (event) => {
+            const result = event.results[event.results.length - 1];
+            if (result.isFinal) {
+                const transcript = result[0].transcript.trim();
+                if (transcript) {
+                    const targetCode = targetSelect.value;
+                    const translated = await translateText(transcript, targetCode);
+                    const isRTL = ['ar', 'he'].includes(targetCode.split('-')[0]);
+                    addCaption(transcript, translated, isRTL);
+                }
+            }
+        };
+
         return true;
-      } catch (error) {
-        showError('Please allow microphone access.');
-        return false;
-      }
     }
-    
-    async function startListening() {
-      if (!recognition) if (!initializeSpeechRecognition()) return;
-      
-      permissionMessage.classList.remove('hidden');
-      
-      const hasPermission = await requestMicrophonePermission();
-      if (!hasPermission) {
-        permissionMessage.classList.add('hidden');
-        return;
-      }
-      
-      try {
-        recognition.start();
-        isListening = true;
-      } catch (error) {
-        console.log("Recognition error:", error);
-      }
+
+    // --- Controls ---
+    async function startSession() {
+        if (!recognition) {
+            if (!initializeRecognition()) return;
+        } else {
+            recognition.lang = sourceSelect.value;
+        }
+
+        permissionMessage.classList.remove('hidden');
+        
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            stream.getTracks().forEach(track => track.stop());
+            permissionMessage.classList.add('hidden');
+            
+            try { recognition.start(); } catch(e) { console.log(e); }
+            
+        } catch (err) {
+            showError("Please allow microphone access.");
+            permissionMessage.classList.add('hidden');
+        }
     }
-    
-    function stopListening() {
-      isListening = false;
-      if (recognition) recognition.stop();
+
+    function stopSession() {
+        isListening = false;
+        if (recognition) recognition.stop();
+        window.speechSynthesis.cancel();
     }
-    
-    startBtn.addEventListener('click', startListening);
-    stopBtn.addEventListener('click', stopListening);
+
+    function toggleUI(listening) {
+        if (listening) {
+            // Active State
+            placeholderText.classList.add('hidden'); // Hide placeholder
+            headerControls.classList.remove('hidden'); // Show header controls row
+            stopBtn.classList.remove('hidden');
+            headerStartBtn.classList.add('hidden');
+            statusBadge.classList.remove('hidden');
+            
+            // Disable inputs
+            sourceSelect.disabled = true;
+            sourceSelect.classList.add('opacity-50');
+        } else {
+            // Stopped State
+            headerControls.classList.remove('hidden'); // Keep header row visible for resume
+            stopBtn.classList.add('hidden');
+            headerStartBtn.classList.remove('hidden'); // Show resume button
+            statusBadge.classList.add('hidden');
+            
+            // Re-enable inputs
+            sourceSelect.disabled = false;
+            sourceSelect.classList.remove('opacity-50');
+        }
+    }
+
+    function showError(msg) {
+        const errEl = document.getElementById('error-message');
+        document.getElementById('error-text').textContent = msg;
+        errEl.classList.remove('hidden');
+        setTimeout(() => errEl.classList.add('hidden'), 5000);
+    }
+
+    // Event Listeners
+    heroStartBtn.addEventListener('click', startSession);
+    headerStartBtn.addEventListener('click', startSession);
+    stopBtn.addEventListener('click', stopSession);
+
+    // Boot
+    init();
 
   </script>
  </body>
