@@ -35,10 +35,6 @@
     .playing-indicator .bar:nth-child(2) { animation-delay: 0.1s; }
     .playing-indicator .bar:nth-child(3) { animation-delay: 0.2s; }
 
-    /* Typing Animation for Live Draft */
-    @keyframes blink { 50% { opacity: 0; } }
-    .cursor-blink { animation: blink 1s step-start infinite; }
-
     /* Custom Toggles */
     .mode-btn.active { background-color: #4f46e5; color: white; border-color: #4f46e5; }
     .mode-btn { background-color: #1e293b; color: #94a3b8; border: 1px solid #334155; }
@@ -80,22 +76,34 @@
                <!-- Input Section -->
                <div class="w-full md:w-64">
                    <div class="relative">
-                       <label class="absolute -top-2.5 left-3 bg-slate-900 px-1 text-[10px] font-bold text-indigo-400 uppercase tracking-wider">I am Speaking</label>
+                       <label class="absolute -top-2.5 left-3 bg-slate-900 px-2 flex items-center gap-1">
+                           <!-- Microphone Icon -->
+                           <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-indigo-400" viewBox="0 0 20 20" fill="currentColor">
+                             <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd" />
+                           </svg>
+                           <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Input</span>
+                       </label>
                        <select id="source-lang" class="w-full bg-slate-900 border border-slate-700 text-white text-sm rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow outline-none cursor-pointer">
                            <!-- Populated by JS -->
                        </select>
                    </div>
                </div>
 
-               <!-- Direction Arrow -->
+               <!-- Direction Arrow (Simple Right Arrow for Input -> Output flow) -->
                <div class="flex-shrink-0 text-slate-500 bg-slate-800 p-2 rounded-full border border-slate-700">
-                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
                </div>
 
                <!-- Output Section -->
                <div class="w-full md:w-64">
                    <div class="relative">
-                       <label class="absolute -top-2.5 left-3 bg-slate-900 px-1 text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Translate To</label>
+                       <label class="absolute -top-2.5 left-3 bg-slate-900 px-2 flex items-center gap-1">
+                           <!-- Speaker/Audio Icon -->
+                           <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-emerald-400" viewBox="0 0 20 20" fill="currentColor">
+                             <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0117 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.414z" clip-rule="evenodd" />
+                           </svg>
+                           <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Output</span>
+                       </label>
                        <select id="target-lang" class="w-full bg-slate-900 border border-slate-700 text-white text-sm rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-shadow outline-none cursor-pointer">
                            <!-- Populated by JS -->
                        </select>
