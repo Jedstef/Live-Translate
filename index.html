@@ -35,6 +35,10 @@
     .playing-indicator .bar:nth-child(2) { animation-delay: 0.1s; }
     .playing-indicator .bar:nth-child(3) { animation-delay: 0.2s; }
 
+    /* Typing Animation for Live Draft */
+    @keyframes blink { 50% { opacity: 0; } }
+    .cursor-blink { animation: blink 1s step-start infinite; }
+
     /* Custom Toggles */
     .mode-btn.active { background-color: #4f46e5; color: white; border-color: #4f46e5; }
     .mode-btn { background-color: #1e293b; color: #94a3b8; border: 1px solid #334155; }
@@ -155,6 +159,17 @@
              </div>
          </div>
 
+         <!-- Live Preview Draft Bubble (Hidden by default) -->
+         <div id="live-preview" class="hidden mb-6 opacity-60">
+            <div class="flex flex-col gap-2">
+                <div class="flex items-start gap-3 max-w-[90%] self-start">
+                    <div class="text-xs font-bold text-slate-500 bg-slate-800 px-2 py-1 rounded animate-pulse">Listening...</div>
+                    <p id="live-preview-text" class="text-slate-300 text-sm leading-relaxed italic"></p>
+                    <span class="inline-block w-1.5 h-4 bg-emerald-500 cursor-blink mt-1"></span>
+                </div>
+            </div>
+         </div>
+
        </div>
      </div>
    </main>
@@ -240,6 +255,9 @@
     const headerControls = document.getElementById('header-controls');
     const placeholderText = document.getElementById('placeholder-text');
     const statusBadge = document.getElementById('status-badge');
+    const captionsContainer = document.getElementById('captions-container');
+    const livePreview = document.getElementById('live-preview');
+    const livePreviewText = document.getElementById('live-preview-text');
     
     const modeTextBtn = document.getElementById('mode-text');
     const modeAudioBtn = document.getElementById('mode-audio');
@@ -340,7 +358,7 @@
             voiceNameSpan.textContent = "System Voice";
         }
         
-        utterance.rate = 1.0; // Normal speed is usually most natural for these voices
+        utterance.rate = 1.0; 
         
         utterance.onstart = () => showVoiceToast();
         utterance.onend = () => hideVoiceToast();
@@ -377,10 +395,12 @@
 
     // --- UI Update: Add Bubble ---
     function addCaption(original, translated, isRTL) {
-        const container = document.getElementById('captions-container');
-        
-        // Hide placeholder but keep it for logic
+        // Remove placeholder if present
         placeholderText.classList.add('hidden');
+        
+        // Hide Live Preview
+        livePreview.classList.add('hidden');
+        livePreviewText.textContent = '';
 
         const div = document.createElement('div');
         div.className = 'caption-enter mb-6';
@@ -405,12 +425,21 @@
             </div>
         `;
 
-        container.appendChild(div);
-        container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+        // Insert before the live preview element to keep live preview at bottom
+        captionsContainer.insertBefore(div, livePreview);
+        captionsContainer.scrollTo({ top: captionsContainer.scrollHeight, behavior: 'smooth' });
 
         if (isAudioMode) {
             speakText(translated, targetSelect.value);
         }
+    }
+
+    function updateLivePreview(text) {
+        if (!text) return;
+        placeholderText.classList.add('hidden');
+        livePreview.classList.remove('hidden');
+        livePreviewText.textContent = text;
+        captionsContainer.scrollTo({ top: captionsContainer.scrollHeight, behavior: 'smooth' });
     }
 
     // --- Speech Recognition ---
@@ -423,7 +452,10 @@
 
         recognition = new SpeechRecognition();
         recognition.continuous = true;
-        recognition.interimResults = false;
+        
+        // CRITICAL: Enable interim results for real-time visualization
+        recognition.interimResults = true;
+        
         recognition.lang = sourceSelect.value; 
 
         recognition.onstart = () => {
@@ -451,15 +483,28 @@
         };
 
         recognition.onresult = async (event) => {
-            const result = event.results[event.results.length - 1];
-            if (result.isFinal) {
-                const transcript = result[0].transcript.trim();
-                if (transcript) {
-                    const targetCode = targetSelect.value;
-                    const translated = await translateText(transcript, targetCode);
-                    const isRTL = ['ar', 'he'].includes(targetCode.split('-')[0]);
-                    addCaption(transcript, translated, isRTL);
+            let finalTranscript = '';
+            let interimTranscript = '';
+
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript;
+                } else {
+                    interimTranscript += event.results[i][0].transcript;
                 }
+            }
+
+            // Show Interim results immediately
+            if (interimTranscript) {
+                updateLivePreview(interimTranscript);
+            }
+
+            // Process Final results
+            if (finalTranscript) {
+                const targetCode = targetSelect.value;
+                const translated = await translateText(finalTranscript, targetCode);
+                const isRTL = ['ar', 'he'].includes(targetCode.split('-')[0]);
+                addCaption(finalTranscript, translated, isRTL);
             }
         };
 
@@ -493,6 +538,7 @@
         isListening = false;
         if (recognition) recognition.stop();
         window.speechSynthesis.cancel();
+        livePreview.classList.add('hidden'); // Clear preview on stop
     }
 
     function toggleUI(listening) {
