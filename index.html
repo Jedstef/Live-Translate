@@ -461,6 +461,7 @@
         recognition.onstart = () => {
             isListening = true;
             toggleUI(true);
+            permissionMessage.classList.add('hidden'); // Hide hint once started
         };
 
         recognition.onend = () => {
@@ -472,6 +473,7 @@
         };
 
         recognition.onerror = (event) => {
+            permissionMessage.classList.add('hidden'); // Hide hint on error
             if (event.error === 'no-speech') return;
             if (event.error === 'not-allowed') {
                 showError("Microphone blocked. Check browser permissions.");
@@ -519,17 +521,14 @@
             recognition.lang = sourceSelect.value;
         }
 
+        // Show hint in case the browser prompt is subtle
         permissionMessage.classList.remove('hidden');
         
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            stream.getTracks().forEach(track => track.stop());
-            permissionMessage.classList.add('hidden');
-            
-            try { recognition.start(); } catch(e) { console.log(e); }
-            
-        } catch (err) {
-            showError("Please allow microphone access.");
+            recognition.start();
+        } catch (e) {
+            // If already started or other error, hide message
+            console.log("Recognition start error:", e);
             permissionMessage.classList.add('hidden');
         }
     }
