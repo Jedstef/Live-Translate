@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="en" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Translator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Inter font for professional look -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
+    
+    @keyframes pulse-ring {
+      0% { transform: scale(0.8); opacity: 0.5; }
+      100% { transform: scale(2); opacity: 0; }
+    }
+    
+    .listening-ring {
+      position: relative;
+    }
+    .listening-ring::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background-color: #ef4444; /* red-500 */
+      border-radius: 50%;
+      z-index: -1;
+      animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    }
+    
+    .caption-enter {
+      animation: fadeIn 0.3s ease-out;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes sound-wave {
+      0% { height: 4px; }
+      50% { height: 12px; }
+      100% { height: 4px; }
+    }
+    
+    .playing-indicator .bar {
+      width: 3px;
+      background-color: #fff;
+      border-radius: 9999px;
+      animation: sound-wave 0.8s ease-in-out infinite;
+    }
+    .playing-indicator .bar:nth-child(1) { animation-delay: 0.0s; }
+    .playing-indicator .bar:nth-child(2) { animation-delay: 0.1s; }
+    .playing-indicator .bar:nth-child(3) { animation-delay: 0.2s; }
+
+    /* Custom Toggle Switch */
+    .toggle-checkbox:checked {
+      right: 0;
+      border-color: #4f46e5;
+    }
+    .toggle-checkbox:checked + .toggle-label {
+      background-color: #4f46e5;
+    }
+    
+    /* Dark scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; } /* slate-600 */
+    ::-webkit-scrollbar-thumb:hover { background: #64748b; } /* slate-500 */
+  </style>
+ </head>
+ <body class="h-full bg-slate-900 text-slate-100">
+  <div id="app-wrapper" class="w-full h-full flex flex-col">
+   
+   <!-- Professional Dark Header -->
+   <header class="bg-slate-900/90 backdrop-blur-sm border-b border-slate-700 shadow-sm z-10 sticky top-0">
+     <div class="max-w-7xl mx-auto px-6 py-4 flex flex-col xl:flex-row items-center justify-between gap-4">
+       
+       <!-- Logo Area -->
+       <div class="flex items-center gap-3 w-full xl:w-auto justify-between xl:justify-start">
+         <div class="flex items-center gap-3">
+             <div class="bg-indigo-600 text-white p-2 rounded-lg shadow-sm">
+               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+               </svg>
+             </div>
+             <div>
+                <h1 class="text-lg font-bold text-white tracking-tight leading-tight">Live Translator</h1>
+                <p class="text-xs text-slate-400 font-medium">Enterprise Edition</p>
+             </div>
+         </div>
+       </div>
+
+       <!-- Main Controls -->
+       <div class="flex flex-col md:flex-row items-center gap-4 w-full xl:w-auto justify-center">
+          
+          <!-- Audio Mode Toggle -->
+          <div class="flex items-center gap-3 bg-slate-800 py-1.5 px-4 rounded-lg border border-slate-700">
+             <span class="text-sm font-medium text-slate-300 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
+                Audio Mode
+             </span>
+             <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                <input type="checkbox" name="toggle" id="audio-toggle" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-slate-400 transition-all duration-300 ease-in-out left-0 top-0"/>
+                <label for="audio-toggle" class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-400 cursor-pointer transition-colors duration-300 ease-in-out"></label>
+            </div>
+          </div>
+
+          <!-- Language Selector (Dark) -->
+          <div class="relative flex-grow md:flex-grow-0 group w-full md:w-auto">
+              <select id="language-select" class="w-full md:w-56 appearance-none bg-slate-800 border border-slate-600 text-slate-200 text-sm font-medium py-2 px-3 pr-8 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors cursor-pointer shadow-sm">
+                  <optgroup label="Common Languages">
+                    <option value="pt" selected>🇧🇷 Portuguese</option>
+                    <option value="es">🇪🇸 Spanish</option>
+                    <option value="fr">🇫🇷 French</option>
+                    <option value="de">🇩🇪 German</option>
+                    <option value="zh">🇨🇳 Chinese (Simp)</option>
+                  </optgroup>
+                  <optgroup label="All Languages">
+                    <option value="it">🇮🇹 Italian</option>
+                    <option value="ja">🇯🇵 Japanese</option>
+                    <option value="ko">🇰🇷 Korean</option>
+                    <option value="ru">🇷🇺 Russian</option>
+                    <option value="hi">🇮🇳 Hindi</option>
+                    <option value="ar">🇸🇦 Arabic</option>
+                    <option value="nl">🇳🇱 Dutch</option>
+                    <option value="tr">🇹🇷 Turkish</option>
+                    <option value="pl">🇵🇱 Polish</option>
+                    <option value="vi">🇻🇳 Vietnamese</option>
+                  </optgroup>
+              </select>
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+                  <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+              </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <button id="start-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 px-6 rounded-lg transition-colors flex items-center gap-2 shadow-sm text-sm whitespace-nowrap border border-indigo-500">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+              Start Listening
+          </button>
+          
+          <button id="stop-btn" class="hidden bg-slate-800 border border-red-900/50 text-red-400 hover:bg-slate-700 font-medium py-2 px-6 rounded-lg transition-colors flex items-center gap-2 shadow-sm text-sm whitespace-nowrap">
+            <span class="relative flex h-2 w-2 mr-1">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+            </span>
+            Stop Session
+          </button>
+       </div>
+     </div>
+   </header>
+
+   <!-- Main Content Area -->
+   <main class="flex-1 overflow-hidden relative">
+     <div class="max-w-4xl mx-auto h-full flex flex-col p-4 md:p-6">
+       
+       <!-- Status Bar -->
+       <div id="status-bar" class="mb-4 flex items-center justify-center text-xs font-medium text-slate-400 opacity-0 transition-opacity duration-300">
+          <div class="bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 shadow-sm flex items-center gap-2">
+            <span class="relative flex h-2 w-2">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            Microphone Active & Listening...
+          </div>
+       </div>
+
+       <!-- Captions Container -->
+       <div id="captions-container" class="flex-1 overflow-y-auto px-2 pb-24 space-y-6 scroll-smooth">
+         
+         <!-- Placeholder State -->
+         <div id="placeholder-text" class="h-full flex flex-col items-center justify-center text-slate-500">
+             <div class="bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-700 mb-4">
+               <!-- Translation Icon -->
+               <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+               </svg>
+             </div>
+             <h3 class="text-lg font-semibold text-slate-300 mb-1">Ready to Translate</h3>
+             <p class="text-center text-sm text-slate-500 max-w-xs">
+               Select language, enable <strong>Audio Mode</strong> if needed, and click <strong>Start Listening</strong>.
+             </p>
+         </div>
+
+       </div>
+     </div>
+   </main>
+
+   <!-- Toasts/Alerts -->
+   <div id="alerts-container" class="fixed bottom-8 left-1/2 transform -translate-x-1/2 w-full max-w-md px-4 pointer-events-none flex flex-col gap-3 items-center z-50">
+     
+     <!-- Voice Active Toast -->
+     <div id="voice-toast" class="bg-slate-800 text-white px-4 py-3 rounded-lg shadow-lg hidden pointer-events-auto flex items-center gap-4 transition-all duration-300 translate-y-4 opacity-0 border border-slate-700">
+        <div class="playing-indicator flex gap-1 h-3 items-center">
+            <div class="bar h-2"></div>
+            <div class="bar h-3"></div>
+            <div class="bar h-1"></div>
+        </div>
+        <div class="flex flex-col">
+            <span class="text-[10px] uppercase tracking-wider font-semibold opacity-60">Speaking</span>
+            <span id="voice-name" class="text-xs font-medium truncate max-w-[150px]">System Voice</span>
+        </div>
+     </div>
+
+     <!-- Error Message -->
+     <div id="error-message" class="bg-slate-800 border border-red-900/50 text-red-400 px-4 py-3 rounded-lg shadow-lg hidden pointer-events-auto flex items-start gap-3 w-full">
+        <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <div>
+            <p class="font-semibold text-sm">System Error</p>
+            <span id="error-text" class="text-sm">An unexpected error occurred.</span>
+        </div>
+     </div>
+
+     <!-- Permission Message -->
+     <div id="permission-message" class="bg-slate-800 text-white px-6 py-4 rounded-lg shadow-xl hidden pointer-events-auto w-full border border-slate-700">
+      <div class="flex items-center gap-4">
+       <div class="bg-slate-700 p-2 rounded-lg">
+         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+       </div>
+       <div>
+        <p class="font-semibold text-sm mb-0.5">Microphone Permissions</p>
+        <p class="text-xs text-slate-400">Please allow access to your microphone to proceed.</p>
+       </div>
+      </div>
+     </div>
+     
+   </div>
+
+  </div>
+
+  <script>
+    let recognition = null;
+    let isListening = false;
+    let currentLang = 'pt'; 
+    let transcriptCounter = 0;
+    let availableVoices = [];
+    let isAudioMode = false;
+    
+    // UI Elements
+    const langSelect = document.getElementById('language-select');
+    const startBtn = document.getElementById('start-btn');
+    const stopBtn = document.getElementById('stop-btn');
+    const statusBar = document.getElementById('status-bar');
+    const voiceToast = document.getElementById('voice-toast');
+    const voiceNameSpan = document.getElementById('voice-name');
+    const permissionMessage = document.getElementById('permission-message');
+    const errorMessage = document.getElementById('error-message');
+    const audioToggle = document.getElementById('audio-toggle');
+    
+    // --- RESET LOGIC ---
+    function resetUIState() {
+        startBtn.classList.remove('hidden');
+        stopBtn.classList.add('hidden');
+        statusBar.classList.add('opacity-0');
+        permissionMessage.classList.add('hidden');
+        errorMessage.classList.add('hidden');
+        voiceToast.classList.add('hidden');
+        isListening = false;
+    }
+
+    window.addEventListener('DOMContentLoaded', resetUIState);
+
+    langSelect.addEventListener('change', (e) => {
+        currentLang = e.target.value;
+    });
+
+    audioToggle.addEventListener('change', (e) => {
+        isAudioMode = e.target.checked;
+        if (isAudioMode) {
+             // Optional: Briefly announce "Audio Mode On" (only locally if already speaking permission granted)
+             // But usually silent toggle is better
+        } else {
+             window.speechSynthesis.cancel();
+             hideVoiceToast();
+        }
+    });
+
+    // Initialize Voices
+    function loadVoices() {
+        availableVoices = window.speechSynthesis.getVoices();
+    }
+    
+    if (window.speechSynthesis) {
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+        loadVoices();
+    }
+    
+    const flags = { 
+        pt: '🇧🇷', es: '🇪🇸', fr: '🇫🇷', de: '🇩🇪', it: '🇮🇹', 
+        ja: '🇯🇵', zh: '🇨🇳', ru: '🇷🇺', ko: '🇰🇷', hi: '🇮🇳',
+        ar: '🇸🇦', nl: '🇳🇱', tr: '🇹🇷', pl: '🇵🇱', vi: '🇻🇳'
+    };
+    
+    const ttsLangMap = {
+        'pt': 'pt-BR', 'es': 'es-ES', 'fr': 'fr-FR', 'de': 'de-DE', 
+        'it': 'it-IT', 'ja': 'ja-JP', 'zh': 'zh-CN', 'ru': 'ru-RU', 
+        'ko': 'ko-KR', 'hi': 'hi-IN', 'ar': 'ar-SA', 'nl': 'nl-NL',
+        'tr': 'tr-TR', 'pl': 'pl-PL', 'vi': 'vi-VN'
+    };
+
+    function getBestVoice(lang) {
+        const targetLang = ttsLangMap[lang] || lang;
+        const targetBase = targetLang.split('-')[0];
+        
+        let candidates = availableVoices.filter(v => v.lang === targetLang);
+        if (candidates.length === 0) {
+            candidates = availableVoices.filter(v => v.lang.startsWith(targetBase));
+        }
+        
+        if (candidates.length === 0) return null;
+
+        const highQuality = ['Google', 'Premium', 'Enhanced', 'Natural', 'Neural', 'Siri'];
+        
+        return candidates.sort((a, b) => {
+            const aName = a.name;
+            const bName = b.name;
+            const aHQ = highQuality.some(w => aName.includes(w));
+            const bHQ = highQuality.some(w => bName.includes(w));
+            
+            if (aHQ && !bHQ) return -1;
+            if (!aHQ && bHQ) return 1;
+            return 0;
+        })[0];
+    }
+
+    function speakText(text, lang, shouldQueue = false) {
+        if (!window.speechSynthesis) return;
+        
+        if (!shouldQueue) {
+             window.speechSynthesis.cancel(); // Cancel manual clicks immediately
+        }
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        const bestVoice = getBestVoice(lang);
+        
+        if (bestVoice) {
+            utterance.voice = bestVoice;
+            voiceNameSpan.textContent = bestVoice.name.replace(/Microsoft |Google /g, '');
+            showVoiceToast();
+        } else {
+             utterance.lang = ttsLangMap[lang] || lang;
+             voiceNameSpan.textContent = "System Voice";
+             showVoiceToast();
+        }
+
+        utterance.rate = 1.0;
+        utterance.onend = () => {
+             // Only hide toast if queue is empty or this was manual
+             if (!window.speechSynthesis.pending) {
+                hideVoiceToast();
+             }
+        };
+        utterance.onerror = hideVoiceToast;
+
+        window.speechSynthesis.speak(utterance);
+    }
+    
+    function showVoiceToast() {
+        voiceToast.classList.remove('hidden');
+        void voiceToast.offsetWidth;
+        voiceToast.classList.remove('translate-y-4', 'opacity-0');
+    }
+    
+    function hideVoiceToast() {
+        voiceToast.classList.add('translate-y-4', 'opacity-0');
+        setTimeout(() => {
+             voiceToast.classList.add('hidden');
+        }, 300);
+    }
+
+    async function translateText(text, targetLang) {
+      const apiUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+      try {
+        const response = await fetch(apiUrl);
+        if (!response.ok) throw new Error('Network response was not ok');
+        const data = await response.json();
+        return data[0].map(item => item[0]).join('');
+      } catch (error) {
+        console.warn("Translation failed:", error);
+        return text; 
+      }
+    }
+    
+    function addCaption(originalText, translatedText) {
+      const captionsList = document.getElementById('captions-container');
+      const placeholder = document.getElementById('placeholder-text');
+      if (placeholder) placeholder.remove();
+      
+      const captionId = `caption-${transcriptCounter++}`;
+      const flag = flags[currentLang] || '🌐';
+      
+      const captionDiv = document.createElement('div');
+      captionDiv.className = 'caption-enter group';
+      
+      const isRTL = currentLang === 'ar';
+      const dirAttr = isRTL ? 'dir="rtl"' : '';
+      const alignClass = isRTL ? 'text-right' : 'text-left';
+
+      // Professional Layout
+      captionDiv.innerHTML = `
+        <div class="flex flex-col gap-2 mb-6">
+            <!-- Source (Dark Neutral) -->
+            <div class="flex items-start gap-3 max-w-[90%] self-start">
+                <div class="w-8 h-8 rounded-lg bg-slate-800 flex flex-shrink-0 items-center justify-center text-xs font-bold text-slate-400 shadow-sm border border-slate-700">EN</div>
+                <div class="bg-slate-800 p-3 rounded-lg border border-slate-700 text-slate-200 text-sm leading-relaxed shadow-sm">
+                    ${originalText}
+                </div>
+            </div>
+
+            <!-- Translation (Reverted to Indigo, but in Dark Context) -->
+            <div class="flex items-start gap-3 max-w-[90%] self-end flex-row-reverse mt-1">
+                 <div class="w-8 h-8 rounded-lg bg-slate-800 flex flex-shrink-0 items-center justify-center text-sm shadow-sm border border-slate-700">${flag}</div>
+                 <div class="bg-indigo-600 p-4 rounded-lg rounded-tr-none shadow-md text-white relative group-hover:shadow-lg transition-shadow border border-indigo-500">
+                    <div class="flex flex-col gap-2">
+                         <p class="text-base font-medium leading-relaxed ${alignClass}" ${dirAttr}>${translatedText}</p>
+                         
+                         <div class="flex items-center justify-between border-t border-indigo-400/30 pt-2 mt-1">
+                             <span class="text-[10px] font-semibold uppercase tracking-wider text-indigo-200">Translated</span>
+                             <button class="speak-btn text-indigo-100 hover:text-white hover:bg-indigo-500 p-1 rounded-md transition-colors" title="Play Sound">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                                </svg>
+                             </button>
+                         </div>
+                    </div>
+                 </div>
+            </div>
+        </div>
+      `;
+      
+      const speakBtn = captionDiv.querySelector('.speak-btn');
+      speakBtn.onclick = () => speakText(translatedText, currentLang, false); // Manual click cancels queue
+
+      captionsList.appendChild(captionDiv);
+      
+      captionsList.scrollTo({
+          top: captionsList.scrollHeight,
+          behavior: 'smooth'
+      });
+      
+      // Auto-Speak Logic
+      if (isAudioMode) {
+          speakText(translatedText, currentLang, true); // Queue it up
+      }
+    }
+    
+    function showError(message) {
+      const errorDiv = document.getElementById('error-message');
+      const errorText = document.getElementById('error-text');
+      errorText.textContent = message;
+      errorDiv.classList.remove('hidden');
+      setTimeout(() => errorDiv.classList.add('hidden'), 5000);
+    }
+    
+    function initializeSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      
+      if (!SpeechRecognition) {
+        showError('Please use Chrome browser for the best experience.');
+        startBtn.disabled = true;
+        startBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        return false;
+      }
+      
+      recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+      
+      recognition.onstart = () => {
+        isListening = true;
+        startBtn.classList.add('hidden');
+        stopBtn.classList.remove('hidden');
+        statusBar.classList.remove('opacity-0');
+        permissionMessage.classList.add('hidden');
+      };
+
+      recognition.onresult = async (event) => {
+        const result = event.results[event.results.length - 1];
+        if (result.isFinal) {
+          const transcript = result[0].transcript.trim();
+          if (transcript.length > 0) {
+             const translation = await translateText(transcript, currentLang);
+             addCaption(transcript, translation);
+          }
+        }
+      };
+      
+      recognition.onerror = (event) => {
+        if (event.error === 'no-speech') return;
+        console.error("Speech Error", event.error);
+        
+        if (event.error === 'not-allowed') {
+          stopListening();
+          showError('Microphone access needed to listen.');
+        }
+      };
+      
+      recognition.onend = () => {
+        if (isListening) {
+            try { recognition.start(); } catch (e) {}
+        } else {
+            startBtn.classList.remove('hidden');
+            stopBtn.classList.add('hidden');
+            statusBar.classList.add('opacity-0');
+        }
+      };
+      
+      return true;
+    }
+    
+    async function requestMicrophonePermission() {
+      // Normal check
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+           return true; // Optimistic fallback
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(track => track.stop());
+        return true;
+      } catch (error) {
+        showError('Please allow microphone access.');
+        return false;
+      }
+    }
+    
+    async function startListening() {
+      if (!recognition) if (!initializeSpeechRecognition()) return;
+      
+      permissionMessage.classList.remove('hidden');
+      
+      const hasPermission = await requestMicrophonePermission();
+      if (!hasPermission) {
+        permissionMessage.classList.add('hidden');
+        return;
+      }
+      
+      try {
+        recognition.start();
+        isListening = true;
+      } catch (error) {
+        console.log("Recognition error:", error);
+      }
+    }
+    
+    function stopListening() {
+      isListening = false;
+      if (recognition) recognition.stop();
+    }
+    
+    startBtn.addEventListener('click', startListening);
+    stopBtn.addEventListener('click', stopListening);
+
+  </script>
+ </body>
+</html>
